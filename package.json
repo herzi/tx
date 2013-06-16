@@ -1,0 +1,16 @@
+{
+  "name": "tx",
+  "version": "0.0.1",
+  "description": "a simple transaction manager for pg",
+  "main": "",
+  "directories": {},
+  "scripts": {
+  },
+  "repository": {},
+  "keywords": [
+    "node", "database", "transaction", "postgres", "postgresql"
+  ],
+  "author": "Sven Herzberg <sven.herzberg@cluepunk.com>",
+  "license": "BSD 2-clause license",
+  "dependencies": {}
+}
