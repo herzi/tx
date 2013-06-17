@@ -16,7 +16,13 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
 
     transaction.executeSql = function executeSql () {
         switch (arguments.length) {
-        case 2: // executeSql(statement, ???)
+        case 1: // executeSql(statement)
+            return queries.push({
+                statement: arguments[0],
+                parameters: [],
+                callback: null
+            });
+        case 2:
             switch (typeof arguments[1]) {
             case 'function': // executeSql(statement, callback)
                 return queries.push({
@@ -24,11 +30,24 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
                     parameters: [],
                     callback: arguments[1]
                 });
+            case 'object': // executeSql(statement, parameters)
+                return queries.push({
+                    statement: arguments[0],
+                    parameters: arguments[1],
+                    callback: null
+                });
+                break;
             default:
-                throw new Error('FIXME: handle second argument of type ' + typeof arguments[1]);
+                throw new Error('executeSql() does not accept a second argument of type ' + typeof arguments[1]);
             }
+        case 3: // executeSql(statement, parameters, callback)
+            return queries.push({
+                statement: arguments[0],
+                parameters: arguments[1],
+                callback: arguments[2]
+            });
         default:
-            throw new Error('FIXME: implement for ' + arguments.length + ' argument(s).');
+            throw new Error('executeSql() cannot be invoked with ' + arguments.length + ' argument(s).');
         }
     };
 
@@ -36,6 +55,7 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
         if (queries.length < 1) {
             return client.query("COMMIT TRANSACTION", function (error, result) {
                 if (error) {
+                    console.log('FIXME: document internError: ' + require('util').inspect(error));
                     throw error;
                 }
 
@@ -49,10 +69,23 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
 
         client.query(query.statement, query.parameters, function (error, resultSet) {
             if (error) {
-                throw new Error('FIXME: handle error');
+                return client.query("ROLLBACK TRANSACTION", function (internError, resultSet) {
+                    if (internError) {
+                        console.log('FIXME: document internError: ' + require('util').inspect(internError));
+                    }
+
+                    try {
+                        query.callback(error, null);
+                        return finalCallback(error);
+                    } catch (exception) {
+                        return finalCallback(exception);
+                    }
+                });
             }
 
-            query.callback(null, resultSet);
+            if (typeof query.callback === 'function') {
+                query.callback(null, resultSet);
+            }
 
             checkEndOfTransaction();
         });
@@ -66,6 +99,8 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
         try {
             transactionCallback(transaction);
         } catch (exception) {
+            transaction = null;
+            queries = null;
             return finalCallback(exception);
         }
 
