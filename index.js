@@ -75,7 +75,9 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
                     }
 
                     try {
-                        query.callback(error, null);
+                        if (query.callback) {
+                            query.callback(error, null);
+                        }
                         return finalCallback(error);
                     } catch (exception) {
                         return finalCallback(exception);
