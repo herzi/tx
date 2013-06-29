@@ -1,16 +1,27 @@
 {
   "name": "tx",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "a simple transaction manager for pg",
-  "main": "",
+  "main": "index.js",
   "directories": {},
   "scripts": {
   },
-  "repository": {},
+  "homepage": "https://github.com/herzi/tx",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herzi/tx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/herzi/tx/issues"
+  },
   "keywords": [
-    "node", "database", "transaction", "postgres", "postgresql"
+    "database", "node", "node.js", "transaction", "postgres", "postgresql"
   ],
-  "author": "Sven Herzberg <sven.herzberg@cluepunk.com>",
+  "author": {
+    "name": "Sven Herzberg",
+    "email": "sven.herzberg@cluepunk.com",
+    "url": "https://alpha.app.net/herzi"
+  },
   "license": "BSD 2-clause license",
   "dependencies": {}
 }
