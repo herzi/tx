@@ -68,25 +68,37 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
         var query = queries.shift();
 
         client.query(query.statement, query.parameters, function (error, resultSet) {
-            if (error) {
-                return client.query("ROLLBACK TRANSACTION", function (internError, resultSet) {
+            var rollback = function (callback) {
+                client.query("ROLLBACK TRANSACTION", function (internError, resultSet) {
                     if (internError) {
                         console.log('FIXME: document internError: ' + require('util').inspect(internError));
                     }
 
+                    callback();
+                });
+            };
+
+            if (error) {
+                return rollback(function () {
                     try {
                         if (query.callback) {
                             query.callback(error, null);
                         }
-                        return finalCallback(error);
+                        finalCallback(error);
                     } catch (exception) {
-                        return finalCallback(exception);
+                        finalCallback(exception);
                     }
                 });
             }
 
             if (typeof query.callback === 'function') {
-                query.callback(null, resultSet);
+                try {
+                    query.callback(null, resultSet);
+                } catch (exception) {
+                    return rollback(function () {
+                        finalCallback(exception);
+                    });
+                }
             }
 
             checkEndOfTransaction();
@@ -111,5 +123,39 @@ transactions.queueTransaction = function queueTransaction (client, transactionCa
 };
 
 // FIXME: add unit tests here
+
+/* FIXME: make sure this test works
+ * var exception = new Error("this is a test exception " + Math.random());
+ * tx.queueTransaction(client, function (transaction) {
+ *     throw exception;
+ * }, function (error) {
+ *     if (error !== exception) {
+ *         throw new Error('The test failed.');
+ *     }
+ * });
+ */
+
+/* FIXME: make sure this test works
+ * var exception = new Error("this is a test exception " + Math.random());
+ * tx.queueTransaction(client, function (transaction) {
+ *     transaction.executeSql('SELECT now() as "date"', function (error, resultSet) {
+ *         throw exception;
+ *     });
+ * }, function (error) {
+ *     if (error !== exception) {
+ *         throw new Error('The test failed.');
+ *     }
+ * });
+ */
+
+/* FIXME: make sure this test throws an exception
+ * tx.queueTransaction(client, function (transaction) {
+ *     process.nextTick(function () {
+ *         transaction.executeSql('SELECT now() AS "date"');
+ *     });
+ * }, function (error) {
+ *     if (error) throw error;
+ * });
+ */
 
 /* vim:set sw=4 et: */
